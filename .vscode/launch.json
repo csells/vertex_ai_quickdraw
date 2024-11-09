@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "vertex_ai_quickdraw",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "vertex_ai_quickdraw (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}
