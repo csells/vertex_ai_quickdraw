@@ -10,7 +10,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_auth: ^5.3.1
   firebase_core: ^3.6.0
-  firebase_vertexai: ^1.0.1
+  firebase_vertexai: ^1.0.2
   flutter_ai_toolkit: ^0.4.2
   flutter:
     sdk: flutter
