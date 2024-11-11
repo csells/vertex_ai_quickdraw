@@ -1,12 +1,12 @@
-import 'dart:io';
+import 'dart:math';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:signature/signature.dart';
 
+import 'drawings.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -35,31 +35,49 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // initialize the signature controller
-  final _controller = SignatureController(
+  late final _controller = SignatureController(
     penStrokeWidth: 2,
     penColor: Colors.red,
     exportBackgroundColor: Colors.white,
     exportPenColor: Colors.black,
-    onDrawStart: () => debugPrint('onDrawStart called!'),
-    onDrawEnd: () => debugPrint('onDrawEnd called!'),
+    onDrawEnd: () => _recognize(),
   );
+
+  final _provider = VertexProvider(
+    generativeModel: FirebaseVertexAI.instance.generativeModel(
+      model: 'gemini-1.5-flash-002',
+      systemInstruction: Content.text(
+        'You are an expert in recognizing hand-drawn images. You will be '
+        'given an image of a hand-drawn figure and you will recognize it.'
+        'Your response should be the name of the object in the image.'
+        'The choices will be from the following list: $drawings '
+        'Your response should be the name of the object in the image. '
+        'If you are sure of your answer, respond with the name followed by '
+        '"." (a period). If you are not sure, respond with what you think '
+        'the answer is followed by "?" (a question mark).',
+      ),
+    ),
+  );
+
+  final _random = Random();
+  late String _currentDrawing;
+  late String _currentResponse;
 
   @override
   void initState() {
     super.initState();
-    _controller
-      ..addListener(() => debugPrint('Value changed'))
-      ..onDrawEnd = () => setState(
-            () {
-              // setState for build to update value of "empty label" in gui
-            },
-          );
+    _nextDrawing();
   }
+
+  void _nextDrawing() => setState(
+        () {
+          _currentDrawing = drawings[_random.nextInt(drawings.length)];
+          _currentResponse = '';
+        },
+      );
 
   @override
   void dispose() {
-    // IMPORTANT to dispose of the controller
     _controller.dispose();
     super.dispose();
   }
@@ -67,181 +85,41 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Vertex AI Quickdraw!')),
-        body: Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Signature(
-                  key: const Key('signature'),
-                  controller: _controller,
-                  backgroundColor: Colors.grey[300]!,
+        body: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              Text('Draw a $_currentDrawing'),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Signature(
+                    controller: _controller,
+                    backgroundColor: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            Text(_controller.isEmpty
-                ? "Signature pad is empty"
-                : "Signature pad is not empty"),
-          ],
-        ),
-        bottomNavigationBar: BottomAppBar(
-          child: Container(
-            decoration: const BoxDecoration(color: Colors.black),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                IconButton(
-                  key: const Key('exportPNG'),
-                  icon: const Icon(Icons.image),
-                  color: Colors.blue,
-                  onPressed: _exportImage,
-                  tooltip: 'Export Image',
-                ),
-                IconButton(
-                  key: const Key('exportSVG'),
-                  icon: const Icon(Icons.share),
-                  color: Colors.blue,
-                  onPressed: _exportSVG,
-                  tooltip: 'Export SVG',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.undo),
-                  color: Colors.blue,
-                  onPressed: _undo,
-                  tooltip: 'Undo',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.redo),
-                  color: Colors.blue,
-                  onPressed: _redo,
-                  tooltip: 'Redo',
-                ),
-                IconButton(
-                  key: const Key('clear'),
-                  icon: const Icon(Icons.clear),
-                  color: Colors.blue,
-                  onPressed: _clear,
-                  tooltip: 'Clear',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.remove_red_eye),
-                  color: Colors.blue,
-                  onPressed: _recognize,
-                  tooltip: 'Recognize',
-                ),
-              ],
-            ),
+              Text(_currentResponse),
+            ],
           ),
         ),
       );
-
-  Future<void> _exportImage() async {
-    if (_controller.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          key: Key('snackbarPNG'),
-          content: Text('No content'),
-        ),
-      );
-      return;
-    }
-
-    final data = await _controller.toPngBytes();
-    if (data == null) return;
-
-    if (!mounted) return;
-    await _push(
-      context,
-      Scaffold(
-        appBar: AppBar(
-          title: const Text('PNG Image'),
-        ),
-        body: Center(
-          child: Container(
-            color: Colors.grey[300],
-            child: Image.memory(data),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _exportSVG() async {
-    if (_controller.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          key: Key('snackbarSVG'),
-          content: Text('No content'),
-        ),
-      );
-      return;
-    }
-
-    final SvgPicture data = _controller.toSVG()!;
-
-    if (!mounted) return;
-    await _push(
-      context,
-      Scaffold(
-        appBar: AppBar(
-          title: const Text('SVG Image'),
-        ),
-        body: Center(
-          child: Container(
-            color: Colors.grey[300],
-            child: data,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Pushes a widget to a new route.
-  Future _push(BuildContext context, Widget widget) =>
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (BuildContext context) => widget),
-      );
-
-  void _clear() => setState(() => _controller.clear());
-  void _undo() => setState(() => _controller.undo());
-  void _redo() => setState(() => _controller.redo());
 
   Future<void> _recognize() async {
     final image = await _controller.toPngBytes();
     if (image == null) return;
 
-    final svg = _controller.toSVG();
+    final response = await _provider.generateStream(
+      'recognize the attached image',
+      attachments: [
+        ImageFileAttachment(
+          name: 'drawing.png',
+          mimeType: 'image/png',
+          bytes: image,
+        )
+      ],
+    ).join();
 
-    final provider = VertexProvider(
-      generativeModel: FirebaseVertexAI.instance.generativeModel(
-        model: 'gemini-1.5-flash-002',
-        systemInstruction: Content.text(
-          'You are an expert in recognizing hand-drawn images. You will be '
-          'given an image of a hand-drawn figure and you will recognize it.'
-          'Your response should be the name of the object in the image.'
-          'The choices will be from the following list: '
-          'apple, banana, cat, dog, elephant, fish, horse, lion, monkey, '
-          'orange, pear, pineapple, strawberry, tiger, watermelon',
-        ),
-      ),
-    );
-
-    await File('/Users/csells/Downloads/image.png').writeAsBytes(image);
-    // await File('/Users/csells/Downloads/image.svg').writeAsString(svg.);
-
-    final attachment = ImageFileAttachment(
-      name: 'image.png',
-      mimeType: 'image/png',
-      bytes: image,
-    );
-
-    final stream = provider.generateStream(
-      'what is the attached image?',
-      attachments: [attachment],
-    );
-
-    final response = await stream.join();
-    debugPrint(response);
+    setState(() => _currentResponse = response.trim());
   }
 }

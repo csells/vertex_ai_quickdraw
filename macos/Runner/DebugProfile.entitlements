@@ -14,7 +14,5 @@
 		<array>
 			<string>$(AppIdentifierPrefix)com.google.GIDSignIn</string>
 		</array>
-		<key>com.apple.security.files.downloads.read-write</key>
-		<true/>
 	</dict>
 </plist>
