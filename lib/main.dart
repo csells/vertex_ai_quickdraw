@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart' as fat;
-import 'package:flutter_ai_toolkit/src/providers/interface/attachments.dart';
+import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:signature/signature.dart';
 
 import 'drawings.dart';
@@ -69,7 +70,6 @@ class _HomePageState extends State<HomePage> {
 
   // Score or round count can be tracked if you like
   int _score = 0;
-  int _roundsPlayed = 0;
 
   @override
   void initState() {
@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     _provider = fat.VertexProvider(
-      generativeModel: FirebaseVertexAI.instance.generativeModel(
+      model: FirebaseVertexAI.instance.generativeModel(
         model: 'gemini-1.5-flash-002',
         systemInstruction: Content.text(
             'You are an expert in recognizing hand-drawn images. '
@@ -192,7 +192,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _gameState = GameState.success;
         _score++;
-        _roundsPlayed++;
       });
 
       // Proceed to the next object after a short delay
@@ -215,7 +214,6 @@ class _HomePageState extends State<HomePage> {
   void _restartGame() {
     setState(() {
       _score = 0;
-      _roundsPlayed = 0;
     });
     _startGame();
   }

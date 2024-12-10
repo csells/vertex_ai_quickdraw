@@ -11,11 +11,10 @@ dependencies:
   firebase_auth: ^5.3.1
   firebase_core: ^3.6.0
   firebase_vertexai: ^1.0.2
-  flutter_ai_toolkit: ^0.4.2
+  flutter_ai_toolkit: ^0.6.5
   flutter:
     sdk: flutter
   signature: ^5.5.0
-  flutter_svg: ^2.0.14
 
 dev_dependencies:
   flutter_lints: ^5.0.0
