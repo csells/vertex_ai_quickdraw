@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
     ),
   );
 
-  static const _roundDuration = Duration(seconds: 20);
+  static const _roundDuration = Duration(seconds: 21);
   final _random = Random();
   String _currentDrawing = '';
   String _currentResponse = '';
@@ -114,9 +114,9 @@ class _HomePageState extends State<HomePage> {
 
     // if response contains the target object name, we have a winner!
     setState(() => _currentResponse = response.trim());
-    if (_currentDrawing
-        .toLowerCase()
-        .contains(_currentResponse.toLowerCase())) {
+    if (_currentResponse
+        .substring(0, _currentResponse.length - 1)
+        .contains(_currentDrawing)) {
       await _win();
     }
   }
@@ -129,23 +129,26 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _lose() async {
     _cancelTimer();
-    await _messageBox('Time is up!', 'The correct answer is $_currentDrawing');
+    await _notifyUser('Time is up!');
     _nextDrawing();
   }
 
   Future<void> _win() async {
     _cancelTimer();
     setState(() => _score++);
-    await _messageBox('You got it!', 'The correct answer is $_currentDrawing');
+    await _notifyUser('You got it!');
     _nextDrawing();
   }
 
-  Future<void> _messageBox(String title, String message) => showDialog(
+  Future<void> _notifyUser(String title) => showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: Text(title),
-          content: Text(message),
+          content: Text(
+            'The AI was looking for: $_currentDrawing'
+            '\n\nThe AI found: $_currentResponse',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -170,12 +173,22 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text('Draw a $_currentDrawing', style: _bold24style),
+              const Text(
+                'Draw:',
+                style: _normal16style,
+              ),
+              Text(
+                _currentDrawing,
+                style: _bold24style,
+              ),
               Text(
                 'Time Left: ${_timeLeft.inSeconds} sec',
                 style: _normal16style,
               ),
-              Text('Score: $_score/$_rounds', style: _normal16style),
+              Text(
+                'Score: $_score/$_rounds',
+                style: _normal16style,
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
