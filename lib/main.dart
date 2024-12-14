@@ -16,7 +16,6 @@ enum GameState {
   checking,
   success,
   timeOut,
-  gameOver,
 }
 
 void main() async {
@@ -82,6 +81,12 @@ class _HomePageState extends State<HomePage> {
   var _timeLeft = 20; // seconds per round
   var _score = 0;
 
+  final _normal16style = const TextStyle(fontSize: 16);
+  final _bold24style = const TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -125,9 +130,7 @@ class _HomePageState extends State<HomePage> {
     final image = await _controller.toPngBytes();
     if (image == null) {
       // If no image to recognize, just return
-      setState(() {
-        _gameState = GameState.drawing;
-      });
+      setState(() => _gameState = GameState.drawing);
       return;
     }
 
@@ -143,22 +146,13 @@ class _HomePageState extends State<HomePage> {
     ).join();
 
     final trimmedResponse = response.trim();
-    setState(() {
-      _currentResponse = trimmedResponse;
-    });
-
-    // Check correctness
+    setState(() => _currentResponse = trimmedResponse);
     _checkCorrectness(trimmedResponse);
   }
 
   void _checkCorrectness(String response) {
-    if (_timeLeft <= 0) {
-      // If time already ran out, just mark timeout
-      setState(() {
-        _gameState = GameState.timeOut;
-      });
-      return;
-    }
+    // If time already ran out, ignore the response
+    if (_timeLeft <= 0) return;
 
     // Basic correctness check: If response contains the target object name
     // followed by '.', consider it correct. This matches the instructions you
@@ -178,19 +172,17 @@ class _HomePageState extends State<HomePage> {
         if (!mounted) return;
         _nextDrawing();
       });
-    } else {
-      // If it didn’t guess correctly, let the user keep drawing until time runs
-      // out The user can try redrawing or continuing. Just go back to drawing
-      // state if time is still left
-      if (_timeLeft > 0) {
-        setState(() {
-          _gameState = GameState.drawing;
-        });
-      }
+      // } else {
+      //   // If it didn’t guess correctly, let the user keep drawing until time runs
+      //   // out The user can try redrawing or continuing. Just go back to drawing
+      //   // state if time is still left
+      //   if (_timeLeft > 0) {
+      //     setState(() => _gameState = GameState.drawing);
+      //   }
     }
   }
 
-  void _restartGame() {
+  void restartGame() {
     setState(() => _score = 0);
     _nextDrawing();
   }
@@ -217,12 +209,9 @@ class _HomePageState extends State<HomePage> {
             GameState.drawing || GameState.checking => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Draw a $_currentDrawing',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text('Time Left: $_timeLeft sec',
-                      style: const TextStyle(fontSize: 16)),
-                  Text('Score: $_score', style: const TextStyle(fontSize: 16)),
+                  Text('Draw a $_currentDrawing', style: _bold24style),
+                  Text('Time Left: $_timeLeft sec', style: _normal16style),
+                  Text('Score: $_score', style: _normal16style),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -242,8 +231,7 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       'Success! The AI correctly identified '
                       '$_currentDrawing.',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                      style: _bold24style,
                     ),
                     Text('Score: $_score'),
                     const SizedBox(height: 20),
@@ -255,35 +243,20 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Time’s Up!',
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Time’s Up!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text('You drew: $_currentDrawing'),
                     Text('Score: $_score'),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _gameState = GameState.gameOver;
-                        });
-                      },
+                      onPressed: restartGame,
                       child: const Text('Continue'),
                     )
-                  ],
-                ),
-              ),
-            GameState.gameOver => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Game Over!',
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
-                    Text('Final Score: $_score'),
-                    ElevatedButton(
-                      onPressed: _restartGame,
-                      child: const Text('Restart'),
-                    ),
                   ],
                 ),
               ),
