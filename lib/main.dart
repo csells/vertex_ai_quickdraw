@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart' as fat;
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:signature/signature.dart';
 
@@ -23,7 +22,7 @@ enum GameState {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(App());
+  runApp(const App());
 }
 
 class App extends StatefulWidget {
@@ -35,7 +34,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   @override
-  Widget build(BuildContext context) => MaterialApp(home: HomePage());
+  Widget build(BuildContext context) => const MaterialApp(home: HomePage());
 }
 
 class HomePage extends StatefulWidget {
@@ -46,67 +45,47 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Drawing controller
-  late final SignatureController _controller;
+  late final _controller = SignatureController(
+    penStrokeWidth: 2,
+    penColor: Colors.red,
+    exportBackgroundColor: Colors.white,
+    exportPenColor: Colors.black,
+    // Once player finishes a stroke, we initiate recognition
+    onDrawEnd: () async {
+      if (_gameState == GameState.drawing) {
+        setState(() {
+          _gameState = GameState.checking;
+        });
+        await _recognize();
+      }
+    },
+  );
 
-  // Vertex provider for recognition
-  late final fat.VertexProvider _provider;
+  final _provider = VertexProvider(
+    model: FirebaseVertexAI.instance.generativeModel(
+      model: 'gemini-1.5-flash-002',
+      systemInstruction: Content.text(
+          'You are an expert in recognizing hand-drawn images. '
+          'You will be given an image of a hand-drawn figure and you will '
+          'recognize it.Your response should be the name of the object in the '
+          'image. The choices will be from the following list: $drawings '
+          'If you are sure of your answer, respond with the name followed '
+          'by "." If not sure, respond with "?" at the end.'),
+    ),
+  );
 
-  // Random object selection
   final _random = Random();
-
-  // Current target object to draw
   late String _currentDrawing;
-
-  // The AI’s latest response
   String _currentResponse = '';
-
-  // Game state
   GameState _gameState = GameState.idle;
-
-  // Timer
   Timer? _roundTimer;
-  int _timeLeft = 20; // seconds per round
-
-  // Score or round count can be tracked if you like
-  int _score = 0;
+  var _timeLeft = 20; // seconds per round
+  var _score = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = SignatureController(
-      penStrokeWidth: 2,
-      penColor: Colors.red,
-      exportBackgroundColor: Colors.white,
-      exportPenColor: Colors.black,
-      // Once player finishes a stroke, we initiate recognition
-      onDrawEnd: () async {
-        if (_gameState == GameState.drawing) {
-          setState(() {
-            _gameState = GameState.checking;
-          });
-          await _recognize();
-        }
-      },
-    );
 
-    _provider = fat.VertexProvider(
-      model: FirebaseVertexAI.instance.generativeModel(
-        model: 'gemini-1.5-flash-002',
-        systemInstruction: Content.text(
-            'You are an expert in recognizing hand-drawn images. '
-            'You will be given an image of a hand-drawn figure and you will recognize it. '
-            'Your response should be the name of the object in the image. '
-            'The choices will be from the following list: $drawings '
-            'If you are sure of your answer, respond with the name followed by "." '
-            'If not sure, respond with "?" at the end.'),
-      ),
-    );
-
-    _startGame();
-  }
-
-  void _startGame() {
     // Move to the first round
     _nextDrawing();
   }
@@ -181,9 +160,9 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // Basic correctness check:
-    // If response contains the target object name followed by '.', consider it correct.
-    // This matches the instructions you gave the model.
+    // Basic correctness check: If response contains the target object name
+    // followed by '.', consider it correct. This matches the instructions you
+    // gave the model.
     final targetLower = _currentDrawing.toLowerCase();
     final responseLower = response.toLowerCase();
 
@@ -200,9 +179,9 @@ class _HomePageState extends State<HomePage> {
         _nextDrawing();
       });
     } else {
-      // If it didn’t guess correctly, let the user keep drawing until time runs out
-      // The user can try redrawing or continuing.
-      // Just go back to drawing state if time is still left
+      // If it didn’t guess correctly, let the user keep drawing until time runs
+      // out The user can try redrawing or continuing. Just go back to drawing
+      // state if time is still left
       if (_timeLeft > 0) {
         setState(() {
           _gameState = GameState.drawing;
@@ -212,10 +191,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _restartGame() {
-    setState(() {
-      _score = 0;
-    });
-    _startGame();
+    setState(() => _score = 0);
+    _nextDrawing();
   }
 
   @override
@@ -226,104 +203,91 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    Widget body;
-
-    // Choose UI based on _gameState
-    switch (_gameState) {
-      case GameState.idle:
-        body = Center(
-          child: ElevatedButton(
-            onPressed: _startGame,
-            child: const Text('Start Game'),
-          ),
-        );
-        break;
-      case GameState.drawing:
-      case GameState.checking:
-        body = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Draw a $_currentDrawing',
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Time Left: $_timeLeft sec',
-                style: const TextStyle(fontSize: 16)),
-            Text('Score: $_score', style: const TextStyle(fontSize: 16)),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Signature(
-                  controller: _controller,
-                  backgroundColor: Colors.white,
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Vertex AI Quickdraw!')),
+        body: Padding(
+          padding: const EdgeInsets.all(8),
+          child: switch (_gameState) {
+            GameState.idle => Center(
+                child: ElevatedButton(
+                  onPressed: _nextDrawing,
+                  child: const Text('Start Game'),
                 ),
               ),
-            ),
-            Text(_currentResponse),
-          ],
-        );
-        break;
-      case GameState.success:
-        body = Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Success! The AI correctly identified $_currentDrawing.',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold)),
-              Text('Score: $_score'),
-              const SizedBox(height: 20),
-              const Text('Loading next object...'),
-            ],
-          ),
-        );
-        break;
-      case GameState.timeOut:
-        body = Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Time’s Up!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text('You drew: $_currentDrawing'),
-              Text('Score: $_score'),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _gameState = GameState.gameOver;
-                  });
-                },
-                child: const Text('Continue'),
-              )
-            ],
-          ),
-        );
-        break;
-      case GameState.gameOver:
-        body = Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Game Over!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text('Final Score: $_score'),
-              ElevatedButton(
-                onPressed: _restartGame,
-                child: const Text('Restart'),
+            GameState.drawing || GameState.checking => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Draw a $_currentDrawing',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('Time Left: $_timeLeft sec',
+                      style: const TextStyle(fontSize: 16)),
+                  Text('Score: $_score', style: const TextStyle(fontSize: 16)),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Signature(
+                        controller: _controller,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Text(_currentResponse),
+                ],
               ),
-            ],
-          ),
-        );
-        break;
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Vertex AI Quickdraw!')),
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: body,
-      ),
-    );
-  }
+            GameState.success => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Success! The AI correctly identified '
+                      '$_currentDrawing.',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    Text('Score: $_score'),
+                    const SizedBox(height: 20),
+                    const Text('Loading next object...'),
+                  ],
+                ),
+              ),
+            GameState.timeOut => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Time’s Up!',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text('You drew: $_currentDrawing'),
+                    Text('Score: $_score'),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _gameState = GameState.gameOver;
+                        });
+                      },
+                      child: const Text('Continue'),
+                    )
+                  ],
+                ),
+              ),
+            GameState.gameOver => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Game Over!',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text('Final Score: $_score'),
+                    ElevatedButton(
+                      onPressed: _restartGame,
+                      child: const Text('Restart'),
+                    ),
+                  ],
+                ),
+              ),
+          },
+        ),
+      );
 }
