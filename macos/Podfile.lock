@@ -3,8 +3,6 @@ PODS:
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
-  - file_selector_macos (0.0.1):
-    - FlutterMacOS
   - Firebase/AppCheck (11.4.2):
     - Firebase/CoreOnly
     - FirebaseAppCheck (~> 11.4.0)
@@ -77,21 +75,13 @@ PODS:
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GTMSessionFetcher/Core (4.1.0)
-  - path_provider_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - PromisesObjC (2.4.0)
-  - record_darwin (1.0.0):
-    - FlutterMacOS
 
 DEPENDENCIES:
-  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - firebase_app_check (from `Flutter/ephemeral/.symlinks/plugins/firebase_app_check/macos`)
   - firebase_auth (from `Flutter/ephemeral/.symlinks/plugins/firebase_auth/macos`)
   - firebase_core (from `Flutter/ephemeral/.symlinks/plugins/firebase_core/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
-  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
-  - record_darwin (from `Flutter/ephemeral/.symlinks/plugins/record_darwin/macos`)
 
 SPEC REPOS:
   trunk:
@@ -109,8 +99,6 @@ SPEC REPOS:
     - PromisesObjC
 
 EXTERNAL SOURCES:
-  file_selector_macos:
-    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   firebase_app_check:
     :path: Flutter/ephemeral/.symlinks/plugins/firebase_app_check/macos
   firebase_auth:
@@ -119,14 +107,9 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/firebase_core/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
-  path_provider_foundation:
-    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
-  record_darwin:
-    :path: Flutter/ephemeral/.symlinks/plugins/record_darwin/macos
 
 SPEC CHECKSUMS:
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
-  file_selector_macos: cc3858c981fe6889f364731200d6232dac1d812d
   Firebase: 7fd5466678d964be78fbf536d8a3385da19c4828
   firebase_app_check: 6e63fd2503c1437ef53557136483b03318a0be96
   firebase_auth: cda334a14540e3c1be90eb2cd82682f9409bea37
@@ -141,9 +124,7 @@ SPEC CHECKSUMS:
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
   GTMSessionFetcher: 923b710231ad3d6f3f0495ac1ced35421e07d9a6
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  record_darwin: a0d515a0ef78c440c123ea3ac76184c9927a94d6
 
 PODFILE CHECKSUM: 9ebaf0ce3d369aaa26a9ea0e159195ed94724cf3
 

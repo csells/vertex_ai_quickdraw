@@ -98,14 +98,12 @@ class _HomePageState extends State<HomePage> {
     final image = await _controller.toPngBytes();
     if (image == null) return;
 
-    final response = await _model.generateContent(
-      [
-        Content.text('recognize the attached image'),
-        Content.inlineData('image/png', image),
-      ],
-    );
+    final response = await _model.generateContent([
+      Content.text('recognize the attached image'),
+      Content.inlineData('image/png', image),
+    ]);
 
-    // if response contains the target object name, we have a winner!
+    // if response matches the target object name, we have a winner!
     setState(() => _currentResponse = response.text?.trim() ?? '');
     if (_currentResponse
         .substring(0, _currentResponse.length - 1)
@@ -139,7 +137,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => AlertDialog(
           title: Text(title),
           content: Text(
-            'The AI was looking for: $_currentDrawing'
+            'The AI was looking for: $_currentDrawing.'
             '\n\nThe AI found: $_currentResponse',
           ),
           actions: [
