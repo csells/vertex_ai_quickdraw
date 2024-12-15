@@ -12,7 +12,9 @@ This sample relies on a Firebase project, which you then initialize in your app.
 
 # Usage
 
-TODO: animated gif
+To use quickdraw, follow along with what the app is asking you to draw. When Vertex AI recognizes it, you win!
+
+![screencap](README/screencap.gif)
 
 # Implementation details
 
@@ -20,17 +22,15 @@ The quickdraw sample interacts with Vertex AI in the `_recognize` function:
 
 ```dart
 class _HomePageState extends State<HomePage> {
-  final _provider = VertexProvider(
-    model: FirebaseVertexAI.instance.generativeModel(
-      model: 'gemini-1.5-flash-002',
-      systemInstruction: Content.text(
-          'You are an expert in recognizing hand-drawn images. '
-          'You will be given an image of a hand-drawn figure and you will '
-          'recognize it. Your response should be the name of the object in the '
-          'image. The choices will be from the following list: $drawings '
-          'If you are sure of your answer, respond with the name followed '
-          'by "." If not sure, respond with "?" at the end.'),
-    ),
+  final _model = FirebaseVertexAI.instance.generativeModel(
+    model: 'gemini-1.5-flash-002',
+    systemInstruction: Content.text(
+        'You are an expert in recognizing hand-drawn images. '
+        'You will be given an image of a hand-drawn figure and you will '
+        'recognize it. Your response should be the name of the object in the '
+        'image. The choices will be from the following list: $drawings '
+        'If you are sure of your answer, respond with the name followed '
+        'by "." If not sure, respond with "?" at the end.'),
   );
 
   ...
@@ -43,19 +43,13 @@ class _HomePageState extends State<HomePage> {
     final image = await _controller.toPngBytes();
     if (image == null) return;
 
-    final response = await _provider.generateStream(
-      'recognize the attached image',
-      attachments: [
-        ImageFileAttachment(
-          name: 'drawing.png',
-          mimeType: 'image/png',
-          bytes: image,
-        )
-      ],
-    ).join();
+    final response = await _model.generateContent([
+      Content.text('recognize the attached image'),
+      Content.inlineData('image/png', image),
+    ]);
 
-    // if response contains the target object name, we have a winner!
-    setState(() => _currentResponse = response.trim());
+    // if response matches the target object name, we have a winner!
+    setState(() => _currentResponse = response.text?.trim() ?? '');
     if (_currentResponse
         .substring(0, _currentResponse.length - 1)
         .contains(_currentDrawing)) {
@@ -65,7 +59,7 @@ class _HomePageState extends State<HomePage> {
 }
 ```
 
-As the user draws, each stroke triggers a call to `_recognize`. You can see from the initialization of the Vertex `generativeModel` that it's been instructed to be prepared to recognize drawings from a list of ~200 potential figures, e.g. pen, umbrella, dog, etc. With this instructions in place, the `_recognize` function simply 
+As the user draws, each stroke triggers a call to `_recognize`. You can see from the initialization of the Vertex model that it's been instructed to recognize drawings from a list of ~200 potential figures, e.g. pen, umbrella, dog, etc. With this instructions in place, the `_recognize` function bundles the image that the user produced with a prompt to recogize the image. And because the Flash model is so fast, it can do this between strokes, never slowing down the user as they draw.
 
 
 # Multi-platform
