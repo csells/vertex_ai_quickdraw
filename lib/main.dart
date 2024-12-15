@@ -190,6 +190,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               Text(_currentResponse),
+              const SizedBox(height: 16),
             ],
           ),
         ),
