@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:signature/signature.dart';
 
 import 'drawings.dart';
@@ -38,17 +37,15 @@ class _HomePageState extends State<HomePage> {
     onDrawEnd: _recognize,
   );
 
-  final _provider = VertexProvider(
-    model: FirebaseVertexAI.instance.generativeModel(
-      model: 'gemini-1.5-flash-002',
-      systemInstruction: Content.text(
-          'You are an expert in recognizing hand-drawn images. '
-          'You will be given an image of a hand-drawn figure and you will '
-          'recognize it. Your response should be the name of the object in the '
-          'image. The choices will be from the following list: $drawings '
-          'If you are sure of your answer, respond with the name followed '
-          'by "." If not sure, respond with "?" at the end.'),
-    ),
+  final _model = FirebaseVertexAI.instance.generativeModel(
+    model: 'gemini-1.5-flash-002',
+    systemInstruction: Content.text(
+        'You are an expert in recognizing hand-drawn images. '
+        'You will be given an image of a hand-drawn figure and you will '
+        'recognize it. Your response should be the name of the object in the '
+        'image. The choices will be from the following list: $drawings '
+        'If you are sure of your answer, respond with the name followed '
+        'by "." If not sure, respond with "?" at the end.'),
   );
 
   static const _roundDuration = Duration(seconds: 21);
@@ -101,19 +98,15 @@ class _HomePageState extends State<HomePage> {
     final image = await _controller.toPngBytes();
     if (image == null) return;
 
-    final response = await _provider.generateStream(
-      'recognize the attached image',
-      attachments: [
-        ImageFileAttachment(
-          name: 'drawing.png',
-          mimeType: 'image/png',
-          bytes: image,
-        )
+    final response = await _model.generateContent(
+      [
+        Content.text('recognize the attached image'),
+        Content.inlineData('image/png', image),
       ],
-    ).join();
+    );
 
     // if response contains the target object name, we have a winner!
-    setState(() => _currentResponse = response.trim());
+    setState(() => _currentResponse = response.text?.trim() ?? '');
     if (_currentResponse
         .substring(0, _currentResponse.length - 1)
         .contains(_currentDrawing)) {
