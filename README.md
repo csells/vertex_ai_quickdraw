@@ -1,3 +1,7 @@
+# Deprecated
+
+This repo has been archived in favor of the one in the FirebaseExtended org: https://github.com/FirebaseExtended/ai-quickdraw-flutter
+
 # Vertex AI Quickdraw
 
 The vertex_ai_quickdraw repository contains a sample app showcasing the power of Firebase Vertex AI. It's written using Flutter and [the Vertex AI in Firebase Flutter package](https://pub.dev/packages/firebase_vertexai).
